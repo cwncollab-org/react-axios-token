@@ -108,12 +108,19 @@ function createAxiosInstanceWithToken(
           }, 100)
         })
       }
-      isRefreshingRef.current = true
-      const currentAccessToken = extractTokenFromAuthorizationHeader(
-        (originalRequest.headers.Authorization as string) ?? ''
+      const originalAccessToken = extractTokenFromAuthorizationHeader(
+        originalRequest.headers.Authorization as string
       )
+      const currentAccessToken = await getAccessToken()
+
+      // check if the access token has changed
+      if (originalAccessToken !== currentAccessToken) {
+        originalRequest.headers.Authorization = `Bearer ${currentAccessToken}`
+        return instance(originalRequest)
+      }
 
       try {
+        isRefreshingRef.current = true
         const newAccessToken = await refreshAccessToken(
           currentAccessToken,
           axiosInstance
@@ -140,6 +147,12 @@ function createAxiosInstanceWithToken(
   return instance
 }
 
-function extractTokenFromAuthorizationHeader(authHeader: string) {
-  return authHeader.split(' ')[1]
+function extractTokenFromAuthorizationHeader(
+  authHeader: string | null | undefined
+) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null
+  }
+  const [, token] = authHeader.split(' ')
+  return token
 }
