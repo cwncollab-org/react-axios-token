@@ -13,6 +13,7 @@ function App() {
     data: user,
     isFetching: isFetchingUser,
     refetch: refetchGetUser,
+    error: errorGetUser,
   } = useGetUser({
     enabled: false,
     // retry: false,
@@ -21,6 +22,7 @@ function App() {
     data: roles,
     isFetching: isFetchingRoles,
     refetch: refetchListRoles,
+    error: errorListRoles,
   } = useListRoles({
     enabled: false,
     // retry: false,
@@ -29,6 +31,7 @@ function App() {
     data: users,
     isFetching: isFetchingUsers,
     refetch: refetchListUsers,
+    error: errorListUsers,
   } = useListUsers({
     enabled: false,
     // retry: false,
@@ -98,6 +101,13 @@ function App() {
         {isFetchingUser && <p>Fetching user...</p>}
         {isFetchingRoles && <p>Fetching roles...</p>}
         {isFetchingUsers && <p>Fetching users...</p>}
+        {errorGetUser && <p>Error fetching user: {errorGetUser.message}</p>}
+        {errorListRoles && (
+          <p>Error fetching roles: {errorListRoles.message}</p>
+        )}
+        {errorListUsers && (
+          <p>Error fetching users: {errorListUsers.message}</p>
+        )}
         <pre>{JSON.stringify(user, null, 2)}</pre>
         <pre>{JSON.stringify(roles, null, 2)}</pre>
         <pre>{JSON.stringify(users, null, 2)}</pre>
