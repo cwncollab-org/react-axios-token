@@ -6,6 +6,7 @@ import axios, {
   AxiosInstance,
   CreateAxiosDefaults,
   InternalAxiosRequestConfig,
+  AxiosResponse,
 } from 'axios'
 
 type GetAccessTokenFn = () => Promise<string>
@@ -13,6 +14,12 @@ type RefreshAccessTokenFn = (
   accessToken: string,
   axiosInstance: AxiosInstance
 ) => Promise<string>
+
+type PendingRequest<T = any> = {
+  resolve: (value: T) => void
+  reject: (reason?: any) => void
+  config: InternalAxiosRequestConfig
+}
 
 export type AxiosProviderProps = PropsWithChildren & {
   axiosConfig?: CreateAxiosDefaults
@@ -24,6 +31,7 @@ export function AxiosProvider({ children, ...props }: AxiosProviderProps) {
   const { axiosConfig, getAccessToken, refreshAccessToken } = props
 
   const isRefreshingRef = useRef(false)
+  const pendingRequestsRef = useRef<PendingRequest<AxiosResponse>[]>([])
   const axiosInstance = useMemo(() => axios.create(axiosConfig), [axiosConfig])
   const axiosInstanceWithToken = useMemo(
     () =>
@@ -32,6 +40,7 @@ export function AxiosProvider({ children, ...props }: AxiosProviderProps) {
         getAccessToken,
         refreshAccessToken,
         isRefreshingRef,
+        pendingRequestsRef,
         axiosInstance
       ),
     [
@@ -39,6 +48,7 @@ export function AxiosProvider({ children, ...props }: AxiosProviderProps) {
       getAccessToken,
       refreshAccessToken,
       isRefreshingRef,
+      pendingRequestsRef,
       axiosInstance,
     ]
   )
@@ -60,6 +70,7 @@ function createAxiosInstanceWithToken(
   getAccessToken: GetAccessTokenFn,
   refreshAccessToken: RefreshAccessTokenFn,
   isRefreshingRef: React.RefObject<boolean>,
+  pendingRequestsRef: React.RefObject<PendingRequest<AxiosResponse>[]>,
   axiosInstance: AxiosInstance
 ) {
   const instance = axios.create(axiosConfig)
@@ -67,10 +78,14 @@ function createAxiosInstanceWithToken(
   instance.interceptors.request.use(
     async config => {
       if (isRefreshingRef.current) {
-        return new Promise(resolve => {
-          setTimeout(async () => {
-            resolve(instance(config))
-          }, 100)
+        return new Promise<InternalAxiosRequestConfig>((resolve, reject) => {
+          pendingRequestsRef.current.push({
+            resolve: (response: AxiosResponse) => {
+              resolve(response.config)
+            },
+            reject,
+            config,
+          })
         })
       }
 
@@ -103,21 +118,15 @@ function createAxiosInstanceWithToken(
       }
 
       if (isRefreshingRef.current) {
-        return new Promise((resolve, reject) => {
-          setTimeout(async () => {
-            try {
-              const accessTokenValue = await getAccessToken()
-              if (!accessTokenValue) {
-                return Promise.reject(new Error('No access token'))
-              }
-              originalRequest.headers.Authorization = `Bearer ${accessTokenValue}`
-              resolve(instance(originalRequest))
-            } catch (error) {
-              reject(error)
-            }
-          }, 100)
+        return new Promise<AxiosResponse>((resolve, reject) => {
+          pendingRequestsRef.current.push({
+            resolve,
+            reject,
+            config: originalRequest,
+          })
         })
       }
+
       const originalAccessToken = extractTokenFromAuthorizationHeader(
         originalRequest.headers.Authorization as string
       )
@@ -139,13 +148,28 @@ function createAxiosInstanceWithToken(
           axiosInstance
         )
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+
+        // Process all pending requests with the new token
+        const pendingRequests = pendingRequestsRef.current
+        pendingRequestsRef.current = []
+
+        pendingRequests.forEach(({ resolve, reject, config }) => {
+          config.headers.Authorization = `Bearer ${newAccessToken}`
+          instance(config).then(resolve).catch(reject)
+        })
+
+        return instance(originalRequest)
       } catch (error) {
-        console.error('Error refreshing token', error)
+        // Reject all pending requests if token refresh fails
+        const pendingRequests = pendingRequestsRef.current
+        pendingRequestsRef.current = []
+        pendingRequests.forEach(({ reject }) => {
+          reject(error)
+        })
         return Promise.reject(error)
       } finally {
         isRefreshingRef.current = false
       }
-      return instance(originalRequest)
     }
   )
 
