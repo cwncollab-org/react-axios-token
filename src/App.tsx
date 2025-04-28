@@ -9,12 +9,29 @@ import {
 
 function App() {
   const { mutateAsync: login } = useAuth()
-  const { data: user, refetch: refetchGetUser } = useGetUser({ enabled: false })
-  const { data: roles, refetch: refetchListRoles } = useListRoles({
+  const {
+    data: user,
+    isFetching: isFetchingUser,
+    refetch: refetchGetUser,
+  } = useGetUser({
     enabled: false,
+    // retry: false,
   })
-  const { data: users, refetch: refetchListUsers } = useListUsers({
+  const {
+    data: roles,
+    isFetching: isFetchingRoles,
+    refetch: refetchListRoles,
+  } = useListRoles({
     enabled: false,
+    // retry: false,
+  })
+  const {
+    data: users,
+    isFetching: isFetchingUsers,
+    refetch: refetchListUsers,
+  } = useListUsers({
+    enabled: false,
+    // retry: false,
   })
   const [formData, setFormData] = useState({
     username: '',
@@ -78,7 +95,12 @@ function App() {
       <hr />
       <div>
         <button onClick={() => handleTest()}>Test</button>
+        {isFetchingUser && <p>Fetching user...</p>}
+        {isFetchingRoles && <p>Fetching roles...</p>}
+        {isFetchingUsers && <p>Fetching users...</p>}
         <pre>{JSON.stringify(user, null, 2)}</pre>
+        <pre>{JSON.stringify(roles, null, 2)}</pre>
+        <pre>{JSON.stringify(users, null, 2)}</pre>
       </div>
     </div>
   )
