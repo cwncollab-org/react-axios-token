@@ -1,11 +1,16 @@
 {
   "name": "@cwncollab-org/react-axios-token",
   "private": false,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "homepage": "https://github.com/cwncollab-org/react-axios-token",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cwncollab-org/react-axios-token.git"
+  },
   "files": [
     "dist"
   ],

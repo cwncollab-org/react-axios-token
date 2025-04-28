@@ -21,7 +21,7 @@ npm install @cwncollab-org/react-axios-token
 ### 1. Wrap your application with AxiosProvider
 
 ```tsx
-import { AxiosProvider } from 'react-axios-token'
+import { AxiosProvider } from '@cwncollab-org/react-axios-token'
 
 function App() {
   const getAccessToken = async () => {
@@ -60,7 +60,7 @@ function App() {
 ### 2. Use the provided hooks in your components
 
 ```tsx
-import { useAxiosInstance, useAxiosInstanceWithToken } from 'react-axios-token'
+import { useAxiosInstance, useAxiosInstanceWithToken } from '@cwncollab-org/react-axios-token'
 
 function MyComponent() {
   // Use this for requests that don't need authentication
