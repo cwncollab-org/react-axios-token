@@ -15,7 +15,8 @@
     "build:lib": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
     "preview": "vite preview",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "prepare": "npm run build:lib"
   },
   "dependencies": {
     "axios": "^1.8.2",
