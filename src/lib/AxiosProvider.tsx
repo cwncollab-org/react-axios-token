@@ -66,6 +66,15 @@ function createAxiosInstanceWithToken(
 
   instance.interceptors.request.use(
     async config => {
+      console.log('Intercepting request', config.url)
+      if (isRefreshingRef.current) {
+        return new Promise(resolve => {
+          setTimeout(async () => {
+            resolve(instance(config))
+          }, 100)
+        })
+      }
+
       const accessTokenValue = await getAccessToken()
       if (accessTokenValue) {
         config.headers.Authorization = `Bearer ${accessTokenValue}`
@@ -125,21 +134,13 @@ function createAxiosInstanceWithToken(
           currentAccessToken,
           axiosInstance
         )
-        originalRequest.headers.common['Authorization'] =
-          `Bearer ${newAccessToken}`
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
       } catch (error) {
-        if (error instanceof AxiosError && error.response?.status === 401) {
-          // error refreshing token, logout user
-          console.log('Error refreshing token, need logout', error)
-          return Promise.reject(error)
-        }
+        console.error('Error refreshing token', error)
+        return Promise.reject(error)
       } finally {
-        console.log('Refreshed token', error.request?.responseURL)
         isRefreshingRef.current = false
       }
-      originalRequest._retry = originalRequest._retry
-        ? originalRequest._retry + 1
-        : 1
       return instance(originalRequest)
     }
   )
