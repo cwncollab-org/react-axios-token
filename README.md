@@ -29,14 +29,17 @@ function App() {
     return localStorage.getItem('accessToken')
   }
 
-  const refreshAccessToken = async (currentToken: string, axiosInstance: AxiosInstance) => {
+  const refreshAccessToken = async (currentAccessToken: string, axiosInstance: AxiosInstance) => {
     // Implement your token refresh logic here
+    const currentRefreshToken = localStorage.getItem('refreshToken')
     const response = await axiosInstance.post('/refresh-token', {
-      token: currentToken
+      accessToken: currentAccessToken,
+      refreshToken: currentRefreshToken
     })
-    const newToken = response.data.accessToken
-    localStorage.setItem('accessToken', newToken)
-    return newToken
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data.accessToken 
+    localStorage.setItem('accessToken', newAccessToken)
+    localStorage.setItem('refreshToken', newRefreshToken)
+    return newAccessToken
   }
 
   return (
