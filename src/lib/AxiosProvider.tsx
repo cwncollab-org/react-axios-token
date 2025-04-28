@@ -21,15 +21,30 @@ type PendingRequest<T = any> = {
   config: InternalAxiosRequestConfig
 }
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 export type AxiosProviderProps = PropsWithChildren & {
   axiosConfig?: CreateAxiosDefaults
   getAccessToken: GetAccessTokenFn
   refreshAccessToken: RefreshAccessTokenFn
+  maxRetries?: number
+  baseDelay?: number
+  maxDelay?: number
 }
 
-export function AxiosProvider({ children, ...props }: AxiosProviderProps) {
-  const { axiosConfig, getAccessToken, refreshAccessToken } = props
+const DEFAULT_MAX_RETRIES = 3
+const DEFAULT_BASE_DELAY = 1000 // 1 second
+const DEFAULT_MAX_DELAY = 10000 // 10 seconds
 
+export function AxiosProvider({
+  children,
+  axiosConfig,
+  getAccessToken,
+  refreshAccessToken,
+  maxRetries = DEFAULT_MAX_RETRIES,
+  baseDelay = DEFAULT_BASE_DELAY,
+  maxDelay = DEFAULT_MAX_DELAY,
+}: AxiosProviderProps) {
   const isRefreshingRef = useRef(false)
   const pendingRequestsRef = useRef<PendingRequest<AxiosResponse>[]>([])
   const axiosInstance = useMemo(() => axios.create(axiosConfig), [axiosConfig])
@@ -41,7 +56,10 @@ export function AxiosProvider({ children, ...props }: AxiosProviderProps) {
         refreshAccessToken,
         isRefreshingRef,
         pendingRequestsRef,
-        axiosInstance
+        axiosInstance,
+        maxRetries,
+        baseDelay,
+        maxDelay
       ),
     [
       axiosConfig,
@@ -50,6 +68,9 @@ export function AxiosProvider({ children, ...props }: AxiosProviderProps) {
       isRefreshingRef,
       pendingRequestsRef,
       axiosInstance,
+      maxRetries,
+      baseDelay,
+      maxDelay,
     ]
   )
 
@@ -71,7 +92,10 @@ function createAxiosInstanceWithToken(
   refreshAccessToken: RefreshAccessTokenFn,
   isRefreshingRef: React.RefObject<boolean>,
   pendingRequestsRef: React.RefObject<PendingRequest<AxiosResponse>[]>,
-  axiosInstance: AxiosInstance
+  axiosInstance: AxiosInstance,
+  maxRetries: number,
+  baseDelay: number,
+  maxDelay: number
 ) {
   const instance = axios.create(axiosConfig)
 
@@ -114,6 +138,21 @@ function createAxiosInstanceWithToken(
         !error.response ||
         error.response.status !== 401
       ) {
+        // Handle other errors with exponential backoff
+        if (originalRequest?._retry === undefined) {
+          originalRequest._retry = 0
+        }
+
+        if (originalRequest._retry < maxRetries) {
+          const delay = Math.min(
+            baseDelay * Math.pow(2, originalRequest._retry),
+            maxDelay
+          )
+          originalRequest._retry++
+          await sleep(delay)
+          return instance(originalRequest)
+        }
+
         return Promise.reject(error)
       }
 
