@@ -66,7 +66,6 @@ function createAxiosInstanceWithToken(
 
   instance.interceptors.request.use(
     async config => {
-      console.log('Intercepting request', config.url)
       if (isRefreshingRef.current) {
         return new Promise(resolve => {
           setTimeout(async () => {
@@ -76,9 +75,10 @@ function createAxiosInstanceWithToken(
       }
 
       const accessTokenValue = await getAccessToken()
-      if (accessTokenValue) {
-        config.headers.Authorization = `Bearer ${accessTokenValue}`
+      if (!accessTokenValue) {
+        return Promise.reject(new Error('No access token'))
       }
+      config.headers.Authorization = `Bearer ${accessTokenValue}`
       return config
     },
     error => {
@@ -107,9 +107,10 @@ function createAxiosInstanceWithToken(
           setTimeout(async () => {
             try {
               const accessTokenValue = await getAccessToken()
-              if (accessTokenValue) {
-                originalRequest.headers.Authorization = `Bearer ${accessTokenValue}`
+              if (!accessTokenValue) {
+                return Promise.reject(new Error('No access token'))
               }
+              originalRequest.headers.Authorization = `Bearer ${accessTokenValue}`
               resolve(instance(originalRequest))
             } catch (error) {
               reject(error)
@@ -121,6 +122,9 @@ function createAxiosInstanceWithToken(
         originalRequest.headers.Authorization as string
       )
       const currentAccessToken = await getAccessToken()
+      if (!currentAccessToken) {
+        return Promise.reject(new Error('No access token'))
+      }
 
       // check if the access token has changed
       if (originalAccessToken !== currentAccessToken) {
