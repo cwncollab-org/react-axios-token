@@ -9,11 +9,11 @@ import axios, {
   AxiosResponse,
 } from 'axios'
 
-type GetAccessTokenFn = () => Promise<string>
+type GetAccessTokenFn = () => Promise<string | null> | string | null
 type RefreshAccessTokenFn = (
   accessToken: string,
   axiosInstance: AxiosInstance
-) => Promise<string>
+) => Promise<string | null> | string | null
 
 type PendingRequest<T = any> = {
   resolve: (value: T) => void
