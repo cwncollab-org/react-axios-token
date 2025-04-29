@@ -6,6 +6,12 @@
     "declarationMap": true,
     "sourceMap": true,
     "rootDir": "./src/lib",
+    "noEmit": false,
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": false,
+    "module": "CommonJS",
+    "target": "ES2020",
+    "jsx": "react-jsx"
   },
   "include": ["src/lib"],
   "exclude": ["node_modules", "dist"]
