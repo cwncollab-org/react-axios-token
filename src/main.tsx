@@ -37,11 +37,13 @@ async function handleRefreshAccessToken(
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AxiosProvider
-      axiosConfig={{
-        baseURL: import.meta.env.VITE_API_URL,
+      config={{
+        axiosConfig: {
+          baseURL: import.meta.env.VITE_API_URL,
+        },
+        getAccessToken: handleGetAccessToken,
+        refreshAccessToken: handleRefreshAccessToken,
       }}
-      getAccessToken={handleGetAccessToken}
-      refreshAccessToken={handleRefreshAccessToken}
     >
       <QueryClientProvider client={queryClient}>
         <App />
