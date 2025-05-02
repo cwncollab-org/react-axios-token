@@ -44,11 +44,12 @@ function App() {
 
   return (
     <AxiosProvider
-      getAccessToken={getAccessToken}
-      refreshAccessToken={refreshAccessToken}
-      // Optional: Custom Axios configuration
-      axiosConfig={{
-        baseURL: 'https://api.example.com'
+      config={{
+        axiosConfig: {
+          baseURL: 'https://api.example.com'
+        },
+        getAccessToken: handleGetAccessToken,
+        refreshAccessToken: handleRefreshAccessToken,
       }}
     >
       {/* Your application components */}
@@ -83,6 +84,18 @@ function MyComponent() {
     <button onClick={fetchData}>Fetch Data</button>
   )
 }
+```
+
+### 3. create and use an axios instance outside react compoenents
+``` tsx
+import { createAxiosInstanceWithToken } from '@cwncollab-org/react-axios-token'
+const axiosInstance = createAxiosInstanceWithToken({
+    axiosConfig: {
+      baseURL: 'https://api.example.com'
+    },
+    getAccessToken: handleGetAccessToken,
+    refreshAccessToken: handleRefreshAccessToken,
+  })
 ```
 
 ## API Reference
