@@ -105,8 +105,13 @@ export function createAxiosInstanceWithToken(
         !error.response ||
         error.response.status !== 401
       ) {
+        // If originalRequest is undefined, we can't retry, so reject immediately
+        if (!originalRequest) {
+          return Promise.reject(error)
+        }
+
         // Handle other errors with exponential backoff
-        if (originalRequest?._retry === undefined) {
+        if (originalRequest._retry === undefined) {
           originalRequest._retry = 0
         }
 
