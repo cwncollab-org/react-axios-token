@@ -44,6 +44,11 @@ type PendingRequest<T = any> = {
   config: InternalAxiosRequestConfig
 }
 
+type InternalAxiosRequestConfigWithRetry = InternalAxiosRequestConfig &
+  InternalAxiosRequestConfig & {
+    _retry?: number
+  }
+
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 export function createAxiosInstanceWithToken(
@@ -97,19 +102,19 @@ export function createAxiosInstanceWithToken(
       return response
     },
     async (error: AxiosError) => {
-      const originalRequest = error.config as InternalAxiosRequestConfig & {
-        _retry?: number
-      }
+      const originalRequest = error.config as
+        | InternalAxiosRequestConfigWithRetry
+        | undefined
+
+      // If originalRequest is undefined or the request was aborted, we can't retry, so reject immediately
       if (
         !originalRequest ||
-        !error.response ||
-        error.response.status !== 401
+        (originalRequest.signal && originalRequest.signal.aborted)
       ) {
-        // If originalRequest is undefined, we can't retry, so reject immediately
-        if (!originalRequest) {
-          return Promise.reject(error)
-        }
+        return Promise.reject(error)
+      }
 
+      if (!error.response || error.response.status !== 401) {
         // Handle other errors with exponential backoff
         if (originalRequest._retry === undefined) {
           originalRequest._retry = 0
