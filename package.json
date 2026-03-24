@@ -12,7 +12,7 @@
     "url": "git+https://github.com/cwncollab-org/react-axios-token.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "registry": "https://cwncollab-619005574504.d.codeartifact.ap-southeast-1.amazonaws.com/npm/cwncollab/"
   },
   "files": [
     "dist"
@@ -21,10 +21,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:lib": "tsc -p tsconfig.build.json",
+    "clean": "node scripts/clean.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "prepare": "npm run build:lib"
+    "prepare": "npm run build:lib",
+    "publish:aws": "node scripts/publish-codeartifact.cjs"
   },
   "dependencies": {
     "axios": "^1.8.2",
